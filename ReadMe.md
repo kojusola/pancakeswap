@@ -20,6 +20,8 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 # MasterChef Contract
 
+- Contract link => https://github.com/pancakeswap/pancake-farm/blob/master/contracts/MasterChef.sol
+
 # Libraries and External Contracts Used
 
 <a id="SafeMath"></a>`import "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol"`
@@ -216,7 +218,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ## Functions
 
-    updateMultiplier(uint256 multiplierNumber)
+updateMultiplier(uint256 multiplierNumber)
 
 - This public function takes in the following:
   - `multiplierNumber` => multiplier number
@@ -225,15 +227,15 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ##
 
-    poolLength()
+poolLength()
 
 - this external view function returns the length of the [`PoolInfo Array`](#APoolInfo).
 
 ##
 
-    add(uint256 _allocPoint, IBEP20 _lpToken, bool _withUpdate)
+add(uint256 \_allocPoint, IBEP20 \_lpToken, bool \_withUpdate)
 
-- This public function adds a new lp to the pool in the poolInfo array and takes in the following :
+- This public function adds a new lp token to the pool in the poolInfo array and takes in the following :
   - `_allocPoint` => allocPoint of the pool to be added,
   - `_lpToken` => lp token,
   - `_withUpdate` => whether to update all pools or not ( it's a boolean),
@@ -247,9 +249,9 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ##
 
-    set(uint256 _pid, uint256 _allocPoint, bool _withUpdate)
+set(uint256 \_pid, uint256 \_allocPoint, bool \_withUpdate)
 
-- This public function adds updates the given pid pool's cake allocation point and takes in the following :
+- This public function updates the given lp token's cake allocation point and takes in the following :
   - `_pid` => pool id meaning position in the [`poolInfo Array`](#APoolInfo),
   - `_allocPoint` => new pool's allocation point,
   - `_withUpdate` => whether to update all pools or not ( it's a boolean),
@@ -266,9 +268,9 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ##
 
-     updateStakingPool()
+updateStakingPool()
 
-- This internal function adds updates the allocation point of cake token pool
+- This internal function updates the allocation point of cake token pool
   ##
 - it gets the length of the [`PoolInfo Array (poolInfo)`](#APoolInfo) and defines it has `length`
 - defines the variable `points` and initializes it has 0
@@ -277,7 +279,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ##
 
-    setMigrator(IMigratorChef _migrator)
+setMigrator(IMigratorChef \_migrator)
 
 - This public function sets the migrator contract and takes in the following :
   - `_migrator` => migrator
@@ -287,7 +289,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
   ##
 
-  migrate(uint256 \_pid)
+migrate(uint256 \_pid)
 
 - This public function migrates lp token to another lp contract and takes in the following :
   - `_pid` => pool id meaning position in the [`poolInfo Array`](#APoolInfo),
@@ -314,7 +316,7 @@ getMultiplier(uint256 \_from, uint256 \_to)
 
   ##
 
-  pendingCake(uint256 \_pid, address \_user)
+pendingCake(uint256 \_pid, address \_user)
 
 - This view external function to see the pending cakes for an address's LP token and takes in the following :
   - `_pid` => LP token pool id.
