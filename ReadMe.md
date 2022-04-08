@@ -46,14 +46,14 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ---
 
-<a id="CakeToken">`import "./CakeToken.sol"`
+<a id="CakeToken"></a>`import "./CakeToken.sol"`
 
 - This is a BEP20 token contract with governance.
 - `mint()` function is used in this contract and it mints cakeTokens to the caller address and move delegates to the caller address from address(0) with the \_amount minted.
 
 ---
 
-<a id="SyrupBar">`import "import "./SyrupBar.sol"`
+<a id="SyrupBar"></a>`import "import "./SyrupBar.sol"`
 
 - This is a BEP20 token contract with governance.
 - `mint()` function is used in this contract and it mints cakeTokens to the caller address and move delegates to the caller address from address(0) with the \_amount minted.
@@ -61,7 +61,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ---
 
-<a id="IMigratorChef">`interface IMigratorChef`
+<a id="IMigratorChef"></a>`interface IMigratorChef`
 
 - This is an interface of a contract used to perform LP token migration from legacy PancakeSwap to CakeSwap.
 - It contains only a function `migrate()` which returns the new address of the LP token. it has some rules:
@@ -72,8 +72,122 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 # Contract `MasterChef`
 
-- `contract MasterChef is Ownable` => It inherits the [`Ownable`](#Ownable) contract.
-- `using SafeMath for uint256` => It attaches library [`SafeMath`](#SafeMath) to `uint256`
-- ` using SafeBEP20 for IBEP20` => It attaches library [`SafeBEP20`](#SafeBEP20) to [`IBEP20`](#IBEP20)
+- `contract MasterChef is Ownable` => It inherits the [`Ownable`](#Ownable) contract. The ownership will be transferred to a governance smart contract once CAKE is sufficiently distributed and the community can show to govern itself
+- `using SafeMath for uint256` => It attaches functions from library [`SafeMath`](#SafeMath) to `uint256`
+- ` using SafeBEP20 for IBEP20` => It attaches functions from library [`SafeBEP20`](#SafeBEP20) to [`IBEP20`](#IBEP20)
 
-# Data Structure
+## Data Structure
+
+<a id="UserInfo"></a>
+
+##
+
+- `UserInfo`: This is a struct that contains details of each User. It includes:
+  - `amount` => amount of LP tokens the user has provided
+  - `rewardDebt` => amount of reward tokens user has withdrawn
+  ##
+       struct UserInfo {
+        uint256 amount;
+        uint256 rewardDebt;
+  }
+
+---
+
+<a id="PoolInfo"></a>
+
+##
+
+- `PoolInfo`: This is a struct that contains details of each User. It includes:
+  - `lpToken` => Address of LP token contract.
+  - `allocPoint` => How many allocation points are assigned to this pool. CAKEs to distribute per block.
+  - `lastRewardBlock` => Last block number that CAKEs distribution occurs.
+  - `accCakePerShare` => Accumulated CAKEs per share, times 1e12. See below.
+  ##
+        struct PoolInfo {
+        IBEP20 lpToken;
+        uint256 allocPoint;
+        uint256 lastRewardBlock;
+        uint256 accCakePerShare;
+  }
+
+---
+
+<a id="cake"></a>`CakeToken public cake`
+
+- Initializes the CakeToken contract as cake.
+
+---
+
+<a id="syrup"></a>`SyrupBar public syrup`
+
+- Initializes the SyrupBar contract as syrup.
+
+---
+
+<a id="devaddr"></a>`address public devaddr`
+
+- Address of Developer.
+
+---
+
+<a id="cakePerBlock"></a>`uint256 public cakePerBlock`
+
+- CAKE tokens created per block.
+
+---
+
+<a id="bonus"></a>`uint256 public BONUS_MULTIPLIER = 1`
+
+- Bonus mulTiplier for early cake makers.
+
+---
+
+<a id="migrator"></a>`IMigratorChef public migrator`
+
+- Initializing Migrator contract as migrator.
+
+---
+
+<a id="APoolInfo"></a>`PoolInfo[] public poolInfo`
+
+- Array of all [`poolInfo`](#poolInfo)
+
+---
+
+<a id="mapp"></a>`mapping (uint256 => mapping (address => UserInfo)) public userInfo`
+
+- A mapping of \_pid(pool id) to a mapping of address of msg.sender to [`UserInfo`](#UserInfo)
+
+---
+
+<a id="totalAllocPoint"></a>`uint256 public totalAllocPoint = 0`
+
+- Total allocationpoints for all the pools
+
+---
+
+<a id="startBlock"></a>`uint256 public startBlock`
+
+- The block number when CAKE mining starts.
+
+---
+
+## Events
+
+<a id="Deposit"></a>`event Deposit(address indexed user, uint256 indexed pid, uint256 amount)`
+
+- This returns the user address that deposited, pid(pool id) of depositor, amount deposited.
+
+---
+
+<a id="Withdraw"></a>`event Withdraw(address indexed user, uint256 indexed pid, uint256 amount)`
+
+- This returns the user address that withdraws, pid(pool id) of widthdrawer, amount widthdrawn.
+
+---
+
+<a id="EmergencyWithdraw"></a>` event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount)`
+
+- This returns the user address that withdraws, pid(pool id) of widthdrawer, amount widthdrawn.
+
+---
