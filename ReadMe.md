@@ -58,6 +58,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 - This is a BEP20 token contract with governance.
 - `mint()` function is used in this contract and it mints cakeTokens to the caller address and move delegates to the caller address from address(0) with the \_amount minted.
 - `burn()` function is used in this contract and it burns cakeTokens to the caller address and move delegates from the caller address from address(0) to the \_amount minted.
+- `safeCakeTransfer` function is used just in case if rounding error causes pool to not have enough cake.
 
 ---
 
@@ -215,8 +216,6 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 ## Functions
 
-##
-
     updateMultiplier(uint256 multiplierNumber)
 
 - This public function takes in the following:
@@ -240,7 +239,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
   - `_withUpdate` => whether to update all pools or not ( it's a boolean),
   ##
 - the [`onlyOwner`](#Ownable) modifier ensures it can only be called by the owner of the contract ie the address that deploys it.
-- if `_withUpdate` is true, The `massUpdatePools()` function would be called.
+- if `_withUpdate` is true, The [`massUpdatePools()`](#massUpdatePools) function would be called.
 - a variable `lastRewardBlock` which is a uint256 is defined an a ternary operator is used to check if block.number is greater than start block and if true the block.number is assigned but if false the startBlock is assigned.
 - the [`totalAllocPoint`](#totalAllocPoint) is updated by adding the pool's `allocPoint`.
 - it creates the [`poolInfo`](#PoolInfo) struct and pushed it into the [`poolInfo Array`](#APoolInfo).
@@ -256,7 +255,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
   - `_withUpdate` => whether to update all pools or not ( it's a boolean),
   ##
 - the [`onlyOwner`](#Ownable) modifier ensures it can only be called by the owner of the contract ie the address that deploys it.
-- if `_withUpdate` is true, The `massUpdatePools()` function would be called.
+- if `_withUpdate` is true, The [`massUpdatePools()`](#massUpdatePools) function would be called.
 - a variable `prevAllocPoint` which is a uint256 is defined and equal to allocation point of the given pid using `poolInfo[_pid].allocPoint`
 - the allocation point of the given pid (poolInfo[_pid].allocPoint) is then updated with new allocation point(`_allocPoint`)
 - then conditional which is run when the previous allocation points (`prevAllocPoint`) is not equal to new allocation point(`_allocPoint`). The following is done if true:
@@ -338,9 +337,9 @@ massUpdatePools()
 
 - This public function updates reward variables for all pools.
   ##
-- it gets the length of the [`PoolInfo Array (poolInfo)`](#APoolInfo) and loops through it, for each of the PoolInfo it calls the [`updatePool()`](#) function.
+- it gets the length of the [`PoolInfo Array (poolInfo)`](#APoolInfo) and loops through it, for each of the PoolInfo it calls the [`updatePool()`](#updatePool) function.
 
-<a id="massUpdatePools"></a>
+<a id="updatePool"></a>
 
 ##
 
@@ -357,3 +356,104 @@ updatePool(uint256 \_pid)
 - then cake token contracts mints `cakeReward` to [`syrup`](#syrup) contract and 10% of `cakeReward` to [`devaddr`](#devaddr) (to be burnt by the [`devaddr`](#devaddr) )
 - accCakePerShare of the lp token is updated by adding (`cakeReward` multiplied by 1e12) the dividing by the amount LP token the contract.
 - finally, update the LP token lastRewardBlock to block.number.
+
+##
+
+deposit(uint256 \_pid, uint256 \_amount)
+
+- This public function deposits LP tokens for CAKE allocation and takes in the following:
+  - `_pid` => LP token pool id.
+  - `_amount` => amount of lp tokens to deposit.
+  ##
+- requires that `_pid` is not equal to 0, since `_pid` equal to 0 is cake staking not LP tokens deposits.
+- it gets the poolInfo for the given LP token from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool` and userInfo from the [`userInfo`](#mapp) mapping using LP token pool id and msg.sender as `user`.
+- it calls the [`updatePool`](#updatePool) function to ensure the rewards are upto date.
+- if the user has staked before, then we calculate the amount of rewards pending(user's amount multiplied by lp tokens accCakePerShare, divided by 1e12 and the users rewardDebt is subtracted), then if rewards are pending they are transferred to the msg.sender using[`safeCakeTransfer(msg.sender, pending)`](#safeCakeTransfer) function.
+- if `_amount` is greater than zero, then the `_amount` lpToken is transferred from the msg.sender to contract and update tha users amount by adding `_amount`.
+- user's rewardDebt is replaced by user's updated amount multiplied by lp tokens accCakePerShare, divided by 1e12.
+- finally emits the [`Deposit`](#Deposit) event.
+
+##
+
+withdraw(uint256 \_pid, uint256 \_amount)
+
+- This public function withdraws LP tokens and takes in the following:
+  - `_pid` => LP token pool id.
+  - `_amount` => amount of lp tokens to withdraw.
+  ##
+- requires that `_pid` is not equal to 0, since `_pid` equal to 0 is cake pool.
+- it gets the poolInfo for the given LP token from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool` and userInfo from the [`userInfo`](#mapp) mapping using LP token pool id and msg.sender as `user`.
+- it requires the `_amount`is less than the amount of LP tokens the user has in the contract
+- it calls the [`updatePool`](#updatePool) function to ensure the rewards are upto date.
+- then we calculate the amount of rewards pending(user's amount multiplied by lp tokens accCakePerShare, divided by 1e12 and the users rewardDebt is subtracted), then if rewards are pending (ie amount of rewards pending is greater than 0) they are transferred to the msg.sender using [`safeCakeTransfer(msg.sender, pending)`](#safeCakeTransfer) function.
+- if `_amount` is greater than zero, update tha users amount by subtracting `_amount` and then the `_amount` lpToken is transferred from the contract to msg.sender.
+- user's rewardDebt is replaced by user's updated amount multiplied by lp tokens accCakePerShare, divided by 1e12.
+- finally emits the [`Withdraw`](#Withdraw) event.
+
+##
+
+enterStaking(uint256 \_amount)
+
+- This public function stakes cake tokens and takes in the following:
+  - `_amount` => amount of cake tokens to deposit.
+  ##
+- the `_pid` is equal to 0 is cake token staking.
+- it gets the poolInfo for the cake tokens from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool` and userInfo from the [`userInfo`](#mapp) mapping using cake token pool id and msg.sender as `user`.
+- it requires the `_amount` is less than the amount of cake tokens the user has in the contract.
+- it calls the [`updatePool`](#updatePool) function to ensure the rewards are upto date.
+- if the user has staked before, then we calculate the amount of rewards pending(user's amount multiplied by cake token accCakePerShare, divided by 1e12 and the users rewardDebt is subtracted), then if rewards are pending they are transferred to the msg.sender using[`safeCakeTransfer(msg.sender, pending)`](#safeCakeTransfer) function.
+- if `_amount` is greater than zero, then the `_amount` cakeToken is transferred from the msg.sender to contract and update tha users amount by adding `_amount`.
+- user's rewardDebt is replaced by user's updated amount multiplied by cake tokens accCakePerShare, divided by 1e12.
+- then the syrup contract calls the `mint()` function from the [`SyrupBar`](#SyrupBar)
+- finally emits the [`Deposit`](#Deposit) event.
+
+##
+
+leaveStaking(uint256 \_amount)
+
+- This public function unstakes cake tokens and takes in the following:
+  - `_amount` => amount of cake tokens to withdraw.
+  ##
+- the `_pid` is equal to 0 is cake token staking.
+- it gets the poolInfo for the cake tokens from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool` and userInfo from the [`userInfo`](#mapp) mapping using cake token pool id and msg.sender as `user`.
+- it calls the [`updatePool`](#updatePool) function to ensure the rewards are upto date.
+- if the user has staked before, then we calculate the amount of rewards pending(user's amount multiplied by cake token accCakePerShare, divided by 1e12 and the users rewardDebt is subtracted), then if rewards are pending they are transferred to the using [`safeCakeTransfer(msg.sender, pending)`](#safeCakeTransfer) function.
+- if `_amount` is greater than zero, update tha users amount by subtracting `_amount` and then the `_amount` cakeToken is transferred from the contract to msg.sender.
+- user's rewardDebt is replaced by user's updated amount multiplied by cake tokens accCakePerShare, divided by 1e12.
+- then the syrup contract calls the `burn()` function from the [`SyrupBar`](#SyrupBar)
+- finally emits the [`Deposit`](#Deposit) event.
+
+##
+
+emergencyWithdraw(uint256 \_pid)
+
+- This public function unstakes cake tokens without care for rewards and takes in the following:
+  - `_pid` => token pool id.
+  ##
+- it gets the poolInfo for the given token from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool` and userInfo from the [`userInfo`](#mapp) mapping using token pool id and msg.sender as `user`.
+- all the given token the msg.sender has is transferred from the contract to msg.sender.
+- emits the [`EmergencyWithdraw`](#EmergencyWithdraw) event.
+- then the user's amount and user's rewardDebt is equated to zero
+- Although, this function also allows for cake token to be withdrawn ( ie unstaking) without burning the syrup token already minted. this can be exploited by some users.
+
+<a id="safeCakeTransfer"></a>
+
+##
+
+safeCakeTransfer(address \_to, uint256 \_amount)
+
+- This internal function transfers cake tokens just in case rounding error causes pool to not have enough cake and takes in the following:
+  - `_to` => address to.
+  - `_amount` => amount of cake token to send.
+  ##
+- it transfers cake tokens.
+
+##
+
+dev(address \_devaddr)
+
+- This internal function updates dev address by the previous dev and takes in the following:
+  - `_devaddr` => new dev address.
+  ##
+- it requires that the msg.sender is the present [`devaddr`](#devaddr)
+- then replaces the old devaddr with `_devaddr`.
