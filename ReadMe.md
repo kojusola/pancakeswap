@@ -72,6 +72,8 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 
 # Contract `MasterChef`
 
-It inherits the `Ownable` contract
+- `contract MasterChef is Ownable` => It inherits the [`Ownable`](#Ownable) contract.
+- `using SafeMath for uint256` => It attaches library [`SafeMath`](#SafeMath) to `uint256`
+- ` using SafeBEP20 for IBEP20` => It attaches library [`SafeBEP20`](#SafeBEP20) to [`IBEP20`](#IBEP20)
 
 # Data Structure
