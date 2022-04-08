@@ -89,7 +89,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
        struct UserInfo {
         uint256 amount;
         uint256 rewardDebt;
-  }
+        }
 
 ---
 
@@ -108,7 +108,7 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
         uint256 allocPoint;
         uint256 lastRewardBlock;
         uint256 accCakePerShare;
-  }
+        }
 
 ---
 
