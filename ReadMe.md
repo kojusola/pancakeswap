@@ -191,3 +191,169 @@ SousChef contract handles staking Syrup token (aka SyrupBar token) to earn rewar
 - This returns the user address that withdraws, pid(pool id) of widthdrawer, amount widthdrawn.
 
 ---
+
+## Constructor
+
+     constructor(
+        CakeToken _cake,
+        SyrupBar _syrup,
+        address _devaddr,
+        uint256 _cakePerBlock,
+        uint256 _startBlock
+        )
+
+- This constructor takes in the following:
+  - `_cake` => CakeToken,
+  - `_syrup` => SyrupBar,
+  - `_devaddr` => developer Address,
+  - `_cakePerBlock` => Cake Per Block,
+  - `_startBlock` => block number when CAKE mining starts,
+  ##
+- It sets all the above into their corresponding defined variables.
+- It creates the first [`poolInfo`](#PoolInfo) struct which is the CakeToken with pid of 0 and pushed into the [`poolInfo Array`](#APoolInfo).
+- It also allocates the [`totalAllocPoint`](#totalAllocPoint) 1000.
+
+## Functions
+
+##
+
+    updateMultiplier(uint256 multiplierNumber)
+
+- This public function takes in the following:
+  - `multiplierNumber` => multiplier number
+  ##
+- It updates the [`BONUS_MULTIPLIER`](#bonus)
+
+##
+
+    poolLength()
+
+- this external view function returns the length of the [`PoolInfo Array`](#APoolInfo).
+
+##
+
+    add(uint256 _allocPoint, IBEP20 _lpToken, bool _withUpdate)
+
+- This public function adds a new lp to the pool in the poolInfo array and takes in the following :
+  - `_allocPoint` => allocPoint of the pool to be added,
+  - `_lpToken` => lp token,
+  - `_withUpdate` => whether to update all pools or not ( it's a boolean),
+  ##
+- the [`onlyOwner`](#Ownable) modifier ensures it can only be called by the owner of the contract ie the address that deploys it.
+- if `_withUpdate` is true, The `massUpdatePools()` function would be called.
+- a variable `lastRewardBlock` which is a uint256 is defined an a ternary operator is used to check if block.number is greater than start block and if true the block.number is assigned but if false the startBlock is assigned.
+- the [`totalAllocPoint`](#totalAllocPoint) is updated by adding the pool's `allocPoint`.
+- it creates the [`poolInfo`](#PoolInfo) struct and pushed it into the [`poolInfo Array`](#APoolInfo).
+- it also calls the [`updateStakingPool()`](#updateStakingPool) function.
+
+##
+
+    set(uint256 _pid, uint256 _allocPoint, bool _withUpdate)
+
+- This public function adds updates the given pid pool's cake allocation point and takes in the following :
+  - `_pid` => pool id meaning position in the [`poolInfo Array`](#APoolInfo),
+  - `_allocPoint` => new pool's allocation point,
+  - `_withUpdate` => whether to update all pools or not ( it's a boolean),
+  ##
+- the [`onlyOwner`](#Ownable) modifier ensures it can only be called by the owner of the contract ie the address that deploys it.
+- if `_withUpdate` is true, The `massUpdatePools()` function would be called.
+- a variable `prevAllocPoint` which is a uint256 is defined and equal to allocation point of the given pid using `poolInfo[_pid].allocPoint`
+- the allocation point of the given pid (poolInfo[_pid].allocPoint) is then updated with new allocation point(`_allocPoint`)
+- then conditional which is run when the previous allocation points (`prevAllocPoint`) is not equal to new allocation point(`_allocPoint`). The following is done if true:
+  - the [`totalAllocPoint`](#totalAllocPoint) is updated by adding the pool's `allocPoint`and subtracting the previous allocation points (`prevAllocPoint`)
+  - it also calls the [`updateStakingPool()`](#updateStakingPool) function.
+
+<a id="updateStakingPool"></a>
+
+##
+
+     updateStakingPool()
+
+- This internal function adds updates the allocation point of cake token pool
+  ##
+- it gets the length of the [`PoolInfo Array (poolInfo)`](#APoolInfo) and defines it has `length`
+- defines the variable `points` and initializes it has 0
+- then, it loops through [`PoolInfo Array (poolInfo)`](#APoolInfo) adding each token's allocation points into variable points `points = points.add(poolInfo[pid].allocPoint)`, it starts from one to ensure only LP token allocation points are added together.
+- finally, it ensures `points` is greater than 1 before dividing points by 3 `points = points.div(3)`, updating [`totalAllocPoint`](#totalAllocPoint) by subtracting allocation points for the cake token and adding the new points value, then updates the allocation points for cake token (`poolInfo[0].allocPoint = points`).
+
+##
+
+    setMigrator(IMigratorChef _migrator)
+
+- This public function sets the migrator contract and takes in the following :
+  - `_migrator` => migrator
+  ##
+- the [`onlyOwner`](#Ownable) modifier ensures function can only be called by the owner of the contract ie the address that deploys it.
+- sets the [`migrator`](#migrator) to `_migrator`
+
+  ##
+
+  migrate(uint256 \_pid)
+
+- This public function migrates lp token to another lp contract and takes in the following :
+  - `_pid` => pool id meaning position in the [`poolInfo Array`](#APoolInfo),
+  ##
+- requires that address of migrator has been set earlier and is not address(0)
+- if `_withUpdate` is true, The `massUpdatePools()` function would be called.
+- it gets the poolInfo of the token using `_pid`(`poolInfo[_pid]`) given from [`PoolInfo Array (poolInfo)`](#APoolInfo) and stores it in `pool`.
+- it checks the lp token balance of the contract (`lpToken.balanceOf(address(this))`) and equates it to variable `bal`.
+- then, the contract approves the migrator address to spend the lpToken on it's behalf then then the migrator contract returns the new address of the new lp token and instantiate the contract (`IBEP20 newLpToken = migrator.migrate(lpToken)`).
+- The new token balance of the contract is required to be equal to `bal`, if not it reverts.
+- then the poolInfo is updated with the newLpToken `pool.lpToken = newLpToken`.
+
+<a id="getMultiplier"></a>
+
+##
+
+getMultiplier(uint256 \_from, uint256 \_to)
+
+- This public view function calculates the BONUS_MULTIPLIER and takes in the following :
+  - `_from` => the from block number
+  - `_to` => the to block number
+  ##
+- it returns the result of `_to` minus `_from` multiplied by `BONUS_MULTIPLIER`
+
+  ##
+
+  pendingCake(uint256 \_pid, address \_user)
+
+- This view external function to see the pending cakes for an address's LP token and takes in the following :
+  - `_pid` => LP token pool id.
+  - `_user` => users address
+  ##
+- it gets the poolInfo for the given LP token from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool` and userInfo from the [`userInfo`](#mapp) mapping using LP token pool id and user's address as `user`.
+- it gets the pool's accCakePerShare (`uint256 accCakePerShare = pool.accCakePerShare`)
+- it also gets the amount LP token the contract has `uint256 lpSupply = pool.lpToken.balanceOf(address(this))`.
+- then, a conditional that checks whether block.number is greater than pool.lastRewardBlock and the contracts LP token balance is greater than 0. if true, the following happens:
+  - get the `multiplier` using the [`getMultiplier()`](#getMultiplier) function
+  - calculate `cakeReward` by multiplying multiplier by [`cakePerBlock`](#cakePerBlock) and multiply by lp token allocation point (`pool.allocPoint`) then divide the total by [`totalAllocPoint`](#totalAllocPoint)
+  - accCakePerShare of the lp token is updated by adding (`cakeReward` multiplied by 1e12) the dividing by the amount LP token the contract
+- then returns the amount the user deposited multiplied by accCakePerShare(updated or not depending) divided by 1e12 and subtract the user's rewardDebt (which is the amount the user has withdrawn earlier).
+
+<a id="massUpdatePools"></a>
+
+##
+
+massUpdatePools()
+
+- This public function updates reward variables for all pools.
+  ##
+- it gets the length of the [`PoolInfo Array (poolInfo)`](#APoolInfo) and loops through it, for each of the PoolInfo it calls the [`updatePool()`](#) function.
+
+<a id="massUpdatePools"></a>
+
+##
+
+updatePool(uint256 \_pid)
+
+- This public function updates reward variables for given pool and takes in the following:
+  - `_pid` => LP token pool id.
+  ##
+- it gets the poolInfo for the given LP token from the [`PoolInfo Array (poolInfo)`](#APoolInfo) as `pool`.
+- if block.number is less than or equal to the given lp Token lastRewardBlock, function returns.
+- if the contract does not have any of the given lp token, the lastRewardBlock for the LP token is updated to block.number and returned.
+- get the `multiplier` using the [`getMultiplier()`](#getMultiplier) function
+- calculate `cakeReward` by multiplying multiplier by [`cakePerBlock`](#cakePerBlock) and multiply by lp token allocation point (`pool.allocPoint`) then divide the total by [`totalAllocPoint`](#totalAllocPoint)
+- then cake token contracts mints `cakeReward` to [`syrup`](#syrup) contract and 10% of `cakeReward` to [`devaddr`](#devaddr) (to be burnt by the [`devaddr`](#devaddr) )
+- accCakePerShare of the lp token is updated by adding (`cakeReward` multiplied by 1e12) the dividing by the amount LP token the contract.
+- finally, update the LP token lastRewardBlock to block.number.
