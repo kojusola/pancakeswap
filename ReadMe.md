@@ -1,7 +1,5 @@
 # Pancakeswap Pancake Farm MasterChef Contract Review
 
----
-
 # Introduction
 
 Pancakeswap is a Binance Smart Chain-based (BSC) Decentralized Exchange (DEX) launched by anonymous developers. It is a DEX for swapping BEP-20 tokens. It uses automated market maker (AMM) model meaning that while you can trade digital assets on the platform, you trade against a liquidity pool.
