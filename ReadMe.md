@@ -442,7 +442,7 @@ emergencyWithdraw(uint256 \_pid)
 
 safeCakeTransfer(address \_to, uint256 \_amount)
 
-- This internal function transfers cake tokens just in case rounding error causes pool to not have enough cake and takes in the following:
+- This public function transfers cake tokens just in case rounding error causes pool to not have enough cake and takes in the following:
   - `_to` => address to.
   - `_amount` => amount of cake token to send.
   ##
@@ -452,7 +452,7 @@ safeCakeTransfer(address \_to, uint256 \_amount)
 
 dev(address \_devaddr)
 
-- This internal function updates dev address by the previous dev and takes in the following:
+- This public function updates dev address by the previous dev and takes in the following:
   - `_devaddr` => new dev address.
   ##
 - it requires that the msg.sender is the present [`devaddr`](#devaddr)
